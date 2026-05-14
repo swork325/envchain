@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional
+import re
 
 
 @dataclass
@@ -70,4 +71,21 @@ def matches_prefix(prefix: str) -> Rule:
         if value is not None and not value.startswith(prefix):
             return f"value must start with '{prefix}'"
         return None
+    return _rule
+
+
+def matches_pattern(pattern: str) -> Rule:
+    """Fails if the value does not match the given regular expression *pattern*.
+
+    The pattern is matched against the full value using ``re.fullmatch``.
+    Values of ``None`` are silently skipped (combine with :func:`required`
+    if the value must be present).
+    """
+    compiled = re.compile(pattern)
+
+    def _rule(value: Optional[str]) -> Optional[str]:
+        if value is not None and not compiled.fullmatch(value):
+            return f"value does not match pattern '{pattern}'"
+        return None
+
     return _rule
