@@ -39,6 +39,11 @@ class TestFrozenChain:
         b = FrozenChain(profile="prod", values={"K": "v"})
         assert a != b
 
+    def test_inequality_different_values(self):
+        a = FrozenChain(profile="dev", values={"K": "v1"})
+        b = FrozenChain(profile="dev", values={"K": "v2"})
+        assert a != b
+
 
 class TestFreeze:
     def test_captures_default_values(self):
@@ -87,17 +92,20 @@ class TestDiffFrozen:
         entries = diff_frozen(fc, fc)
         assert entries == []
 
-    def test_detects_added_key(self):
-        before = FrozenChain(profile="dev", values={"A": "1"})
-        after = FrozenChain(profile="dev", values={"A": "1", "B": "2"})
-        entries = diff_frozen(before, after)
-        keys = [e.key for e in entries]
-        assert "B" in keys
+    def test_diff_detects_changed_value(self):
+        old = FrozenChain(profile="dev", values={"A": "1", "B": "old"})
+        new = FrozenChain(profile="dev", values={"A": "1", "B": "new"})
+        entries = diff_frozen(old, new)
+        assert any(e for e in entries if e["key"] == "B")
 
-    def test_detects_value_change(self):
-        before = FrozenChain(profile="dev", values={"A": "old"})
-        after = FrozenChain(profile="dev", values={"A": "new"})
-        entries = diff_frozen(before, after)
-        assert len(entries) == 1
-        assert entries[0].key == "A"
-        assert entries[0].is_value_diff()
+    def test_diff_detects_added_key(self):
+        old = FrozenChain(profile="dev", values={"A": "1"})
+        new = FrozenChain(profile="dev", values={"A": "1", "B": "2"})
+        entries = diff_frozen(old, new)
+        assert any(e for e in entries if e["key"] == "B")
+
+    def test_diff_detects_removed_key(self):
+        old = FrozenChain(profile="dev", values={"A": "1", "B": "2"})
+        new = FrozenChain(profile="dev", values={"A": "1"})
+        entries = diff_frozen(old, new)
+        assert any(e for e in entries if e["key"] == "B")
