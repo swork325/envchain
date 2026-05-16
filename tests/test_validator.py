@@ -36,6 +36,12 @@ class TestValidationReport:
         assert report.passed is False
         assert len(report.failures) == 1
 
+    def test_empty_report_passes(self):
+        """A report with no results should be considered passing."""
+        report = ValidationReport(results=[])
+        assert report.passed is True
+        assert len(report.failures) == 0
+
     def test_summary_all_pass(self):
         report = ValidationReport(results=[ValidationResult("X", True)])
         assert "passed" in report.summary()
@@ -57,6 +63,10 @@ class TestRules:
 
     def test_required_fails_for_empty_string(self):
         assert required()("") is not None
+
+    def test_required_fails_for_whitespace_only(self):
+        """Whitespace-only strings should be treated as empty/missing."""
+        assert required()("   ") is not None
 
     def test_min_length_passes(self):
         assert min_length(3)("abc") is None
